@@ -1,0 +1,1096 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>سجل الاستشارات</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Kufi+Arabic:wght@400;500;700;900&family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+  :root{
+    --bg:#F4F1E8;
+    --paper:#FDFCF8;
+    --ink:#1E2A2C;
+    --ink-soft:#5B6664;
+    --line:#DCD5C2;
+    --teal:#2F5D62;
+    --teal-dark:#203F42;
+    --gold:#AD8730;
+    --gold-soft:#F1E6C8;
+    --green:#3E6B4F;
+    --green-soft:#E4EEE6;
+    --red:#A13D2B;
+    --red-soft:#F5E4DF;
+    --radius:6px;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    background:var(--bg);
+    color:var(--ink);
+    font-family:'IBM Plex Sans Arabic', sans-serif;
+    -webkit-font-smoothing:antialiased;
+  }
+  .wrap{
+    max-width:760px;
+    margin:0 auto;
+    padding:28px 20px 80px;
+  }
+  header.top{
+    display:flex;
+    align-items:flex-end;
+    justify-content:space-between;
+    border-bottom:2px solid var(--ink);
+    padding-bottom:16px;
+    margin-bottom:24px;
+  }
+  header.top .mark{
+    font-family:'Noto Kufi Arabic', sans-serif;
+    font-weight:900;
+    font-size:15px;
+    letter-spacing:0.5px;
+    color:var(--teal);
+    border:1.5px solid var(--teal);
+    border-radius:50%;
+    width:46px;
+    height:46px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    flex-shrink:0;
+  }
+  header.top h1{
+    font-family:'Noto Kufi Arabic', sans-serif;
+    font-weight:700;
+    font-size:26px;
+    margin:0 0 4px;
+  }
+  header.top p{
+    margin:0;
+    color:var(--ink-soft);
+    font-size:13.5px;
+  }
+  header.top .headtext{flex:1; margin-right:14px;}
+
+  .rules{
+    background:var(--paper);
+    border:1px solid var(--line);
+    border-radius:var(--radius);
+    padding:14px 16px;
+    margin-bottom:22px;
+    font-size:13px;
+    color:var(--ink-soft);
+    line-height:2;
+  }
+  .rules b{color:var(--ink); font-weight:600;}
+
+  button{
+    font-family:inherit;
+    cursor:pointer;
+    border:none;
+  }
+  .btn-primary{
+    background:var(--teal);
+    color:#fff;
+    padding:11px 22px;
+    border-radius:var(--radius);
+    font-size:14.5px;
+    font-weight:600;
+  }
+  .btn-primary:hover{background:var(--teal-dark);}
+  .btn-ghost{
+    background:transparent;
+    border:1px solid var(--line);
+    color:var(--ink);
+    padding:8px 14px;
+    border-radius:var(--radius);
+    font-size:13px;
+    font-weight:500;
+    white-space:nowrap;
+  }
+  .btn-ghost:hover{border-color:var(--teal); color:var(--teal);}
+  .btn-text{
+    background:none;
+    color:var(--teal);
+    font-size:12.5px;
+    text-decoration:underline;
+    padding:2px 0;
+  }
+  .btn-danger-text{
+    background:none;
+    color:var(--red);
+    font-size:12px;
+    text-decoration:underline;
+  }
+
+  /* Add case panel */
+  .add-panel{
+    background:var(--paper);
+    border:1px solid var(--line);
+    border-radius:var(--radius);
+    margin-bottom:26px;
+    overflow:hidden;
+  }
+  .add-toggle{
+    width:100%;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    padding:14px 18px;
+    background:var(--paper);
+    font-weight:600;
+    font-size:15px;
+  }
+  .add-toggle .plus{
+    font-size:20px;
+    color:var(--teal);
+    transition:transform .2s;
+  }
+  .add-form{
+    padding:0 18px 18px;
+    display:none;
+  }
+  .add-form.open{display:block;}
+  .field{margin-bottom:14px;}
+  .field label{
+    display:block;
+    font-size:12.5px;
+    color:var(--ink-soft);
+    margin-bottom:6px;
+    font-weight:500;
+  }
+  .field input[type=text], .field input[type=date]{
+    width:100%;
+    padding:10px 12px;
+    border:1px solid var(--line);
+    border-radius:4px;
+    font-family:inherit;
+    font-size:14px;
+    background:#fff;
+    color:var(--ink);
+  }
+  .field input:focus{outline:2px solid var(--teal); outline-offset:1px;}
+
+  /* Case list */
+  .empty{
+    text-align:center;
+    padding:50px 20px;
+    color:var(--ink-soft);
+    font-size:14px;
+  }
+  .case{
+    position:relative;
+    background:var(--paper);
+    border:1px solid var(--line);
+    border-radius:var(--radius);
+    margin-bottom:16px;
+    padding-right:14px;
+    overflow:hidden;
+  }
+  .case::before{
+    content:"";
+    position:absolute;
+    top:0; right:0; bottom:0;
+    width:6px;
+    background:var(--green);
+  }
+  .case[data-status="paused"]::before{background:var(--gold);}
+  .case[data-status="weekend"]::before{background:var(--gold);}
+  .case[data-status="overdue"]::before{background:var(--red);}
+  .case[data-status="closed"]::before{background:var(--ink-soft);}
+
+  .case-inner{padding:16px 18px 16px 16px;}
+  .case-head{
+    display:flex;
+    justify-content:space-between;
+    align-items:flex-start;
+    gap:10px;
+  }
+  .case-num{
+    font-family:'Noto Kufi Arabic', sans-serif;
+    font-size:11.5px;
+    color:var(--ink-soft);
+    margin-bottom:3px;
+  }
+  .case-title{
+    font-family:'Noto Kufi Arabic', sans-serif;
+    font-weight:700;
+    font-size:16.5px;
+    margin:0;
+  }
+  .badge{
+    font-size:11.5px;
+    font-weight:600;
+    padding:4px 10px;
+    border-radius:20px;
+    white-space:nowrap;
+  }
+  .badge.active{background:var(--green-soft); color:var(--green);}
+  .badge.paused{background:var(--gold-soft); color:var(--gold);}
+  .badge.weekend{background:var(--gold-soft); color:var(--gold);}
+  .badge.overdue{background:var(--red-soft); color:var(--red);}
+  .badge.closed{background:#E9E9E4; color:var(--ink-soft);}
+
+  .case-meta{
+    display:flex;
+    flex-wrap:wrap;
+    gap:16px;
+    margin:12px 0 4px;
+    font-size:12.5px;
+    color:var(--ink-soft);
+  }
+  .case-meta strong{color:var(--ink); font-weight:600;}
+
+  .section-label{
+    font-size:11.5px;
+    font-weight:700;
+    color:var(--teal);
+    margin:16px 0 6px;
+    letter-spacing:0.3px;
+  }
+
+  .milestones{
+    margin:6px 0 14px;
+    background:var(--bg);
+    border-radius:4px;
+    overflow:hidden;
+  }
+  .milestone-row{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    padding:10px 14px;
+  }
+  .milestone-row + .milestone-row{border-top:1px solid var(--line);}
+  .milestone-row .m-label{
+    font-size:12.5px;
+    color:var(--ink-soft);
+  }
+  .milestone-row .m-label b{
+    display:block;
+    color:var(--ink);
+    font-size:13.5px;
+    font-weight:600;
+    margin-bottom:1px;
+  }
+  .milestone-row .m-num{
+    font-family:'Noto Kufi Arabic', sans-serif;
+    font-weight:900;
+    font-size:20px;
+    line-height:1;
+    text-align:left;
+  }
+  .milestone-row .m-num.red{color:var(--red);}
+  .milestone-row .m-num.gold{color:var(--gold);}
+  .milestone-row .m-num.green{color:var(--green);}
+  .milestone-row .m-sub{
+    font-size:11px;
+    color:var(--ink-soft);
+    text-align:left;
+  }
+
+  .stage-box{
+    background:var(--bg);
+    border-radius:4px;
+    overflow:hidden;
+    margin-bottom:6px;
+  }
+  .stage-row{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:10px;
+    padding:10px 14px;
+  }
+  .stage-row + .stage-row{border-top:1px solid var(--line);}
+  .stage-row .s-label{font-size:12.5px; color:var(--ink-soft);}
+  .stage-row .s-label b{display:block; color:var(--ink); font-size:13.5px; font-weight:600; margin-bottom:1px;}
+  .date-box{
+    display:none;
+    padding:10px 14px 14px;
+    border-top:1px dashed var(--line);
+    gap:8px;
+    align-items:center;
+    flex-wrap:wrap;
+  }
+  .date-box.open{display:flex;}
+  .date-box input[type=date]{
+    padding:9px 10px;
+    border:1px solid var(--line);
+    border-radius:4px;
+    font-family:inherit;
+    font-size:13.5px;
+    flex:1;
+    min-width:140px;
+  }
+
+  .summary-box{
+    background:var(--green-soft);
+    border:1px solid #cfe0d4;
+    border-radius:4px;
+    padding:12px 14px;
+    margin:6px 0 14px;
+  }
+  .summary-row{
+    display:flex;
+    justify-content:space-between;
+    align-items:baseline;
+    padding:5px 0;
+    font-size:13px;
+    color:var(--ink);
+  }
+  .summary-row + .summary-row{border-top:1px dotted #cfe0d4;}
+  .summary-row .s-num{
+    font-family:'Noto Kufi Arabic', sans-serif;
+    font-weight:900;
+    font-size:16px;
+    color:var(--teal-dark);
+  }
+  .summary-row .s-note{font-size:11px; color:var(--ink-soft);}
+
+  .case-actions{
+    display:flex;
+    flex-wrap:wrap;
+    gap:8px;
+    margin-top:6px;
+  }
+
+  .extend-box{
+    display:none;
+    margin-top:12px;
+    padding:12px;
+    background:var(--bg);
+    border-radius:4px;
+    border:1px dashed var(--line);
+  }
+  .extend-box.open{display:block;}
+
+  .report-box{
+    display:none;
+    margin:6px 0 14px;
+    padding:12px;
+    background:var(--bg);
+    border-radius:4px;
+    border:1px dashed var(--line);
+  }
+  .report-box.open{display:block;}
+  .report-box .field{margin-bottom:10px;}
+  .report-box .field:last-child{margin-bottom:0;}
+  .report-box select, .report-box textarea{
+    width:100%;
+    padding:10px 12px;
+    border:1px solid var(--line);
+    border-radius:4px;
+    font-family:inherit;
+    font-size:14px;
+    background:#fff;
+    color:var(--ink);
+    resize:vertical;
+  }
+
+  .export-panel{
+    background:var(--paper);
+    border:1px solid var(--line);
+    border-radius:var(--radius);
+    margin-bottom:20px;
+    padding:14px 18px;
+  }
+  .export-panel .row{
+    display:flex;
+    gap:10px;
+    align-items:flex-end;
+    flex-wrap:wrap;
+  }
+  .export-panel .field{flex:1; min-width:150px; margin-bottom:0;}
+  .export-panel input[type=month]{
+    width:100%;
+    padding:10px 12px;
+    border:1px solid var(--line);
+    border-radius:4px;
+    font-family:inherit;
+    font-size:14px;
+    background:#fff;
+    color:var(--ink);
+  }
+  .extend-row{display:flex; gap:8px; align-items:flex-end; flex-wrap:wrap;}
+  .extend-row .field{flex:1; margin-bottom:0; min-width:100px;}
+  .extend-row input[type=number]{
+    width:100%;
+    padding:9px 10px;
+    border:1px solid var(--line);
+    border-radius:4px;
+    font-family:inherit;
+    font-size:14px;
+  }
+
+  .timeline-toggle{
+    margin-top:10px;
+    font-size:12px;
+  }
+  .timeline{
+    display:none;
+    margin-top:10px;
+    border-top:1px solid var(--line);
+    padding-top:10px;
+  }
+  .timeline.open{display:block;}
+  .timeline ul{list-style:none; margin:0; padding:0;}
+  .timeline li{
+    display:flex;
+    gap:10px;
+    font-size:12.5px;
+    color:var(--ink-soft);
+    padding:5px 0;
+    border-bottom:1px dotted var(--line);
+  }
+  .timeline li:last-child{border-bottom:none;}
+  .timeline li .dot{
+    width:6px; height:6px; border-radius:50%;
+    background:var(--teal);
+    margin-top:5px;
+    flex-shrink:0;
+  }
+  .timeline li b{color:var(--ink); font-weight:600;}
+
+  footer.reset-row{
+    text-align:center;
+    margin-top:30px;
+  }
+  footer.reset-row button{
+    background:none;
+    color:var(--ink-soft);
+    font-size:11.5px;
+    text-decoration:underline;
+  }
+
+  @media (max-width:480px){
+    header.top h1{font-size:22px;}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="top">
+    <div class="mark">س</div>
+    <div class="headtext">
+      <h1>سجل الاستشارات</h1>
+      <p>متابعة مدد الاستشارات، التعليق، والتمديد</p>
+    </div>
+  </header>
+
+  <div class="rules">
+    <div>المدتان مرتبطتان ببعض، تبدآن من نفس تاريخ استلام الاستشارة: <b>مهلة الموظف ٣ أيام عمل</b>، و<b>المهلة النهائية للاستشارة كاملة (بما فيها الإدارة) ٥ أيام عمل</b> — هذا مؤشر امتثال داخلي، منفصل عن تاريخ الانتهاء الفعلي المستخدم في التقرير.</div>
+    <div><b>عطلة نهاية الأسبوع (الجمعة والسبت):</b> يتوقف حساب المدة تلقائياً خلالها، وتُستأنف تلقائياً يوم الأحد.</div>
+    <div><b>طلب المستندات:</b> عند طلب مستندات من الجهة طالبة الاستشارة، تُمدَّد المهلتان معاً ٣ أيام إضافية (زر "تمديد المدة").</div>
+    <div><b>التعليق اليدوي:</b> يوقف العدّاد لكلتا المهلتين حتى الاستئناف.</div>
+  </div>
+
+  <div class="export-panel">
+    <div style="font-weight:700; font-family:'Noto Kufi Arabic', sans-serif; margin-bottom:10px; font-size:14.5px;">تقرير شهري (Excel)</div>
+    <div class="row">
+      <div class="field">
+        <label style="display:block; font-size:12.5px; color:var(--ink-soft); margin-bottom:6px;">الشهر</label>
+        <input type="month" id="reportMonth">
+      </div>
+      <button class="btn-primary" id="exportBtn">تنزيل التقرير</button>
+    </div>
+    <div style="font-size:11.5px; color:var(--ink-soft); margin-top:8px;">يشمل التقرير كل استشارة تم استلامها ضمن الشهر المختار (بحسب تاريخ الاستلام).</div>
+  </div>
+
+  <div class="add-panel">
+    <button class="add-toggle" id="addToggle">
+      <span>+ إضافة استشارة جديدة</span>
+      <span class="plus" id="addPlus">+</span>
+    </button>
+    <div class="add-form" id="addForm">
+      <div class="field">
+        <label>موضوع الاستشارة / الجهة</label>
+        <input type="text" id="fTitle" placeholder="مثال: استشارة إدارة الموارد البشرية">
+      </div>
+      <div class="field">
+        <label>تاريخ استلام الاستشارة</label>
+        <input type="date" id="fDate">
+      </div>
+      <button class="btn-primary" id="saveCase">حفظ الاستشارة</button>
+    </div>
+  </div>
+
+  <div id="caseList"></div>
+
+  <footer class="reset-row">
+    <button id="resetAll">مسح جميع البيانات المحفوظة</button>
+  </footer>
+
+</div>
+
+<script>
+const STORAGE_PREFIX = "consult:";
+let cases = [];
+let loaded = false;
+
+// ---------- storage (localStorage — يعمل على أي متصفح، بيانات كل جهاز منفصلة) ----------
+async function loadCases(){
+  try{
+    const items = [];
+    for(let i = 0; i < localStorage.length; i++){
+      const k = localStorage.key(i);
+      if(k && k.indexOf(STORAGE_PREFIX) === 0){
+        try{
+          const v = localStorage.getItem(k);
+          if(v) items.push(JSON.parse(v));
+        }catch(e){}
+      }
+    }
+    items.sort((a,b)=> (a.num||0) - (b.num||0));
+    cases = items;
+  }catch(e){
+    cases = [];
+  }
+  loaded = true;
+  render();
+}
+
+async function saveCase(c){
+  try{
+    localStorage.setItem(STORAGE_PREFIX + c.id, JSON.stringify(c));
+  }catch(e){
+    console.error("تعذر الحفظ", e);
+  }
+}
+
+async function deleteCaseStorage(id){
+  try{ localStorage.removeItem(STORAGE_PREFIX + id); }catch(e){}
+}
+
+// ---------- date helpers ----------
+function todayISO(){
+  const d = new Date();
+  return d.toISOString().slice(0,10);
+}
+function addDays(iso, n){
+  const d = new Date(iso + "T00:00:00");
+  d.setDate(d.getDate() + n);
+  return d.toISOString().slice(0,10);
+}
+function daysBetween(isoA, isoB){
+  const a = new Date(isoA + "T00:00:00");
+  const b = new Date(isoB + "T00:00:00");
+  return Math.round((b - a) / 86400000);
+}
+function fmtDate(iso){
+  const d = new Date(iso + "T00:00:00");
+  return new Intl.DateTimeFormat('ar', {year:'numeric', month:'long', day:'numeric'}).format(d);
+}
+
+// ---------- weekend-aware business-day helpers ----------
+// عطلة نهاية الأسبوع: الجمعة (5) والسبت (6)
+function isWeekendDateObj(d){
+  const day = d.getDay();
+  return day === 5 || day === 6;
+}
+function isWeekendIso(iso){
+  return isWeekendDateObj(new Date(iso + "T00:00:00"));
+}
+// يضيف n يوم عمل (متجاوزاً الجمعة والسبت) على تاريخ البداية
+function addBusinessDays(iso, n){
+  let d = new Date(iso + "T00:00:00");
+  let added = 0;
+  while(added < n){
+    d.setDate(d.getDate() + 1);
+    if(!isWeekendDateObj(d)) added++;
+  }
+  return d.toISOString().slice(0,10);
+}
+// عدد أيام العمل بين تاريخين (fromIso غير شامل، toIso شامل) بشرط toIso > fromIso
+function businessDaysCount(fromIso, toIso){
+  let d = new Date(fromIso + "T00:00:00");
+  const end = new Date(toIso + "T00:00:00");
+  let count = 0;
+  while(d < end){
+    d.setDate(d.getDate() + 1);
+    if(!isWeekendDateObj(d)) count++;
+  }
+  return count;
+}
+// الأيام المتبقية/المتأخرة كأيام عمل (موجب = متبقٍ، سالب = تأخير)
+function remainingBusinessDays(todayIso, dueIso){
+  if(todayIso === dueIso) return 0;
+  if(dueIso > todayIso) return businessDaysCount(todayIso, dueIso);
+  return -businessDaysCount(dueIso, todayIso);
+}
+
+// ---------- business logic ----------
+// المهلتان مرتبطتان ببعض: نفس تاريخ البداية، نفس أيام التعليق، ونفس أيام التمديد.
+const EMPLOYEE_BASE = 3;
+const ADMIN_BASE = 5;
+
+function totalPausedDays(c){
+  let total = 0;
+  const today = todayISO();
+  for(const iv of c.pauses){
+    const end = iv.resumeDate || today;
+    total += Math.max(0, daysBetween(iv.pauseDate, end));
+  }
+  return total;
+}
+function isPaused(c){
+  return c.pauses.length > 0 && !c.pauses[c.pauses.length-1].resumeDate && c.status !== 'closed';
+}
+function isDatePausedForCase(c, iso){
+  return c.pauses.some(iv => iso >= iv.pauseDate && iso <= (iv.resumeDate || todayISO()));
+}
+function extraDays(c){
+  return c.extensions.reduce((s,e)=> s + e.days, 0);
+}
+
+// المهلة = عدد أيام العمل الأساسية + أيام التمديد (تتجاوز الجمعة/السبت تلقائياً)، ثم تُزاح بعدد أيام التعليق اليدوي
+function employeeDue(c){
+  const base = addBusinessDays(c.startDate, EMPLOYEE_BASE + extraDays(c));
+  return addDays(base, totalPausedDays(c));
+}
+function adminDue(c){
+  const base = addBusinessDays(c.startDate, ADMIN_BASE + extraDays(c));
+  return addDays(base, totalPausedDays(c));
+}
+
+// حالة الاستشارة العامة تُبنى على المهلة النهائية (٥ أيام) لأنها نهاية دورة الاستشارة كاملة
+function computeStatus(c){
+  if(c.status === 'closed') return 'closed';
+  if(isPaused(c)) return 'paused';
+  if(isWeekendIso(todayISO())) return 'weekend';
+  const remaining = remainingBusinessDays(todayISO(), adminDue(c));
+  if(remaining < 0) return 'overdue';
+  return 'active';
+}
+
+// عدد أيام العمل الفعلية بين تاريخين، مع استبعاد أيام التعليق اليدوي (والجمعة/السبت أصلاً مستبعدة)
+function countActiveBusinessDays(c, fromIso, toIso){
+  if(!fromIso || !toIso || toIso <= fromIso) return 0;
+  let d = new Date(fromIso + "T00:00:00");
+  const end = new Date(toIso + "T00:00:00");
+  let count = 0;
+  while(d < end){
+    d.setDate(d.getDate() + 1);
+    const iso = d.toISOString().slice(0,10);
+    if(!isWeekendDateObj(d) && !isDatePausedForCase(c, iso)) count++;
+  }
+  return count;
+}
+
+// ---------- rendering ----------
+function statusLabel(s){
+  return {active:'ضمن المدة', paused:'معلّقة', weekend:'عطلة نهاية الأسبوع', overdue:'متأخرة', closed:'منتهية'}[s];
+}
+
+function milestoneRow(label, dueIso, sub, paused, weekend, closed){
+  if(closed){
+    return `<div class="milestone-row"><div class="m-label"><b>${label}</b>${sub}</div><div><div class="m-num" style="color:var(--ink-soft)">—</div></div></div>`;
+  }
+  if(paused){
+    return `<div class="milestone-row"><div class="m-label"><b>${label}</b>${sub}</div><div><div class="m-num gold">‖</div><div class="m-sub">معلّقة</div></div></div>`;
+  }
+  if(weekend){
+    return `<div class="milestone-row"><div class="m-label"><b>${label}</b>${sub}</div><div><div class="m-num gold">‖</div><div class="m-sub">عطلة نهاية الأسبوع</div></div></div>`;
+  }
+  const remaining = remainingBusinessDays(todayISO(), dueIso);
+  const cls = remaining < 0 ? 'red' : (remaining <= 1 ? 'gold' : 'green');
+  const numTxt = remaining < 0 ? Math.abs(remaining) : remaining;
+  const subTxt = remaining < 0 ? 'يوم عمل تأخير' : (remaining === 0 ? 'ينتهي اليوم' : 'يوم عمل متبقٍ');
+  return `<div class="milestone-row"><div class="m-label"><b>${label}</b>${sub}</div><div><div class="m-num ${cls}">${numTxt}</div><div class="m-sub">${subTxt}</div></div></div>`;
+}
+
+function render(){
+  const list = document.getElementById('caseList');
+  if(!loaded) { list.innerHTML = ''; return; }
+  if(cases.length === 0){
+    list.innerHTML = '<div class="empty">لا توجد استشارات مسجّلة بعد. أضف أول استشارة من الأعلى.</div>';
+    return;
+  }
+  list.innerHTML = '';
+  cases.forEach((c, idx) => {
+    const status = computeStatus(c);
+    const eDue = employeeDue(c);
+    const aDue = adminDue(c);
+    const paused = isPaused(c);
+    const weekend = status === 'weekend';
+    const closed = c.status === 'closed';
+
+    const card = document.createElement('div');
+    card.className = 'case';
+    card.dataset.status = status;
+
+    const extraTotal = extraDays(c);
+    const pausedTotal = totalPausedDays(c);
+
+    let metaExtra = '';
+    if(extraTotal > 0) metaExtra += `<span>تمديد إضافي: <strong>${extraTotal} أيام</strong></span>`;
+    if(pausedTotal > 0) metaExtra += `<span>أيام التعليق: <strong>${pausedTotal} أيام</strong></span>`;
+
+    const milestonesHtml = `
+      <div class="milestones">
+        ${milestoneRow('مهلة الموظف (٣ أيام عمل)', eDue, `<span style="display:block">حتى ${fmtDate(eDue)}</span>`, paused, weekend, closed)}
+        ${milestoneRow('المهلة النهائية — الإدارة كاملة (٥ أيام عمل)', aDue, `<span style="display:block">حتى ${fmtDate(aDue)}</span>`, paused, weekend, closed)}
+      </div>
+    `;
+
+    // تاريخ استلام الاستشارة (نفس تاريخ الطلب، قابل للتعديل لاحقاً) وتاريخ الانتهاء منها
+    const receivedVal = c.startDate || '';
+    const finishVal = c.finishDate || '';
+    const stagesHtml = `
+      <div class="section-label">تواريخ الاستشارة (تُستخدم في التقرير الشهري)</div>
+      <div class="stage-box">
+        <div class="stage-row">
+          <div class="s-label"><b>تاريخ استلام الاستشارة</b>${fmtDate(c.startDate)}</div>
+          <button class="btn-ghost" data-action="open-received" data-id="${c.id}">تعديل</button>
+        </div>
+        <div class="date-box" id="received-${c.id}">
+          <input type="date" id="receivedInput-${c.id}" value="${receivedVal}">
+          <button class="btn-primary" data-action="confirm-received" data-id="${c.id}">حفظ</button>
+        </div>
+        <div class="stage-row">
+          <div class="s-label"><b>تاريخ الانتهاء من الاستشارة</b>${c.finishDate ? fmtDate(c.finishDate) : 'لم يُحدد بعد'}</div>
+          <button class="btn-ghost" data-action="open-finish" data-id="${c.id}">${c.finishDate ? 'تعديل' : 'تحديد'}</button>
+        </div>
+        <div class="date-box" id="finish-${c.id}">
+          <input type="date" id="finishInput-${c.id}" value="${finishVal}">
+          <button class="btn-primary" data-action="confirm-finish" data-id="${c.id}">حفظ</button>
+          ${c.finishDate ? `<button class="btn-danger-text" data-action="clear-finish" data-id="${c.id}">مسح التاريخ</button>` : ''}
+        </div>
+      </div>
+    `;
+
+    // بيانات التقرير الشهري
+    const reportFieldsHtml = `
+      <div class="section-label">بيانات التقرير الشهري</div>
+      <button class="btn-text" data-action="toggle-report" data-id="${c.id}">عرض / تعبئة حقول التقرير</button>
+      <div class="report-box" id="report-${c.id}">
+        <div class="field">
+          <label>مقدم الاستشارة</label>
+          <select data-field="submitter" data-id="${c.id}">
+            <option value="">— اختر —</option>
+            <option value="سارة الهطلاني" ${c.submitter==='سارة الهطلاني'?'selected':''}>سارة الهطلاني</option>
+            <option value="خميس الصالح" ${c.submitter==='خميس الصالح'?'selected':''}>خميس الصالح</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>الإشراف</label>
+          <input type="text" data-field="supervision" data-id="${c.id}" value="${escapeAttr(c.supervision||'')}" placeholder="اسم المشرف">
+        </div>
+        <div class="field">
+          <label>الإدارة المستفيدة</label>
+          <input type="text" data-field="beneficiaryDept" data-id="${c.id}" value="${escapeAttr(c.beneficiaryDept||'')}" placeholder="اسم الإدارة المستفيدة">
+        </div>
+        <div class="field">
+          <label>ورود الاستشارة عبر</label>
+          <input type="text" data-field="receivedVia" data-id="${c.id}" value="${escapeAttr(c.receivedVia||'')}" placeholder="مثال: البريد الإلكتروني، خطاب رسمي...">
+        </div>
+        <div class="field">
+          <label>تصنيف المعاملة</label>
+          <input type="text" data-field="classification" data-id="${c.id}" value="${escapeAttr(c.classification||'')}" placeholder="مثال: عاجلة / عادية">
+        </div>
+        <div class="field">
+          <label>ملاحظات إضافية</label>
+          <textarea data-field="notes" data-id="${c.id}" rows="2" placeholder="أي ملاحظات إضافية">${escapeHtml(c.notes||'')}</textarea>
+        </div>
+      </div>
+    `;
+
+    // عدد أيام الاستشارة (من تاريخ الاستلام إلى تاريخ الانتهاء) — نفس الرقم الذي يظهر في تقرير Excel
+    const totalDays = countActiveBusinessDays(c, c.startDate, c.finishDate || todayISO());
+    const summaryHtml = `
+      <div class="section-label">عدد أيام الاستشارة</div>
+      <div class="summary-box">
+        <div class="summary-row"><span>من الاستلام حتى ${c.finishDate ? 'الانتهاء' : 'اليوم'}</span><span class="s-num">${totalDays} يوم عمل ${c.finishDate ? '' : '<span class="s-note">(مستمر)</span>'}</span></div>
+      </div>
+    `;
+
+    card.innerHTML = `
+      <div class="case-inner">
+        <div class="case-head">
+          <div>
+            <div class="case-num">استشارة رقم ${String(idx+1).padStart(2,'0')}</div>
+            <h3 class="case-title">${escapeHtml(c.title || 'بدون عنوان')}</h3>
+          </div>
+          <span class="badge ${status}">${statusLabel(status)}</span>
+        </div>
+        <div class="case-meta">
+          <span>تاريخ الاستلام: <strong>${fmtDate(c.startDate)}</strong></span>
+          ${metaExtra}
+        </div>
+        ${milestonesHtml}
+        ${stagesHtml}
+        ${reportFieldsHtml}
+        ${summaryHtml}
+        <div class="case-actions">
+          ${status !== 'closed' ? `<button class="btn-ghost" data-action="toggle-pause" data-id="${c.id}">${paused ? 'استئناف المدة' : 'تعليق المدة'}</button>` : ''}
+          ${status !== 'closed' ? `<button class="btn-ghost" data-action="open-extend" data-id="${c.id}">تمديد المدة</button>` : ''}
+          ${status !== 'closed' ? `<button class="btn-ghost" data-action="close" data-id="${c.id}">إغلاق الاستشارة</button>` : `<button class="btn-ghost" data-action="reopen" data-id="${c.id}">إعادة فتح</button>`}
+          <button class="btn-ghost" data-action="delete" data-id="${c.id}">حذف</button>
+        </div>
+        <div class="extend-box" id="extend-${c.id}">
+          <div class="extend-row">
+            <div class="field">
+              <label>عدد الأيام</label>
+              <input type="number" min="1" value="3" id="extDays-${c.id}">
+            </div>
+            <div class="field" style="flex:2">
+              <label>السبب (اختياري)</label>
+              <input type="text" placeholder="مثال: طلب مستندات إضافية" id="extNote-${c.id}">
+            </div>
+            <button class="btn-primary" data-action="confirm-extend" data-id="${c.id}" style="padding:9px 16px;">تأكيد</button>
+          </div>
+        </div>
+        <div class="timeline-toggle">
+          <button class="btn-text" data-action="toggle-timeline" data-id="${c.id}">عرض سجل الإجراءات (${c.log.length})</button>
+        </div>
+        <div class="timeline" id="timeline-${c.id}">
+          <ul>
+            ${c.log.slice().reverse().map(e => `<li><span class="dot"></span><span><b>${fmtDate(e.date)}</b> — ${escapeHtml(e.text)}</span></li>`).join('')}
+          </ul>
+        </div>
+      </div>
+    `;
+    list.appendChild(card);
+  });
+
+  document.querySelectorAll('[data-action]').forEach(btn => {
+    btn.addEventListener('click', handleAction);
+  });
+
+  document.querySelectorAll('[data-field]').forEach(el => {
+    el.addEventListener('change', async (e) => {
+      const id = e.target.dataset.id;
+      const field = e.target.dataset.field;
+      const c = findCase(id);
+      if(!c) return;
+      c[field] = e.target.value;
+      await saveCase(c);
+      // لا نعيد الرسم هنا حتى لا تُغلق لوحة التقرير أو يُفقد التركيز
+    });
+  });
+}
+
+function escapeHtml(str){
+  const d = document.createElement('div');
+  d.textContent = str;
+  return d.innerHTML;
+}
+function escapeAttr(str){
+  return String(str).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+function findCase(id){ return cases.find(c => c.id === id); }
+
+async function handleAction(e){
+  const btn = e.currentTarget;
+  const action = btn.dataset.action;
+  const id = btn.dataset.id;
+  const c = findCase(id);
+
+  if(action === 'toggle-timeline'){
+    document.getElementById('timeline-'+id).classList.toggle('open');
+    return;
+  }
+  if(action === 'open-extend'){
+    document.getElementById('extend-'+id).classList.toggle('open');
+    return;
+  }
+  if(action === 'open-received'){
+    document.getElementById('received-'+id).classList.toggle('open');
+    return;
+  }
+  if(action === 'open-finish'){
+    document.getElementById('finish-'+id).classList.toggle('open');
+    return;
+  }
+  if(action === 'toggle-report'){
+    document.getElementById('report-'+id).classList.toggle('open');
+    return;
+  }
+  if(!c) return;
+
+  if(action === 'toggle-pause'){
+    if(isPaused(c)){
+      c.pauses[c.pauses.length-1].resumeDate = todayISO();
+      c.log.push({date: todayISO(), text: 'استئناف المدة (للموظف والإدارة معاً)'});
+    } else {
+      c.pauses.push({pauseDate: todayISO(), resumeDate: null});
+      c.log.push({date: todayISO(), text: 'تعليق المدة (للموظف والإدارة معاً)'});
+    }
+    await saveCase(c);
+    render();
+  }
+  else if(action === 'confirm-extend'){
+    const days = parseInt(document.getElementById('extDays-'+id).value, 10) || 0;
+    const note = document.getElementById('extNote-'+id).value.trim();
+    if(days > 0){
+      c.extensions.push({date: todayISO(), days});
+      c.log.push({date: todayISO(), text: `تمديد المدة ${days} أيام (للموظف والإدارة معاً)${note ? ' — ' + note : ''}`});
+      await saveCase(c);
+      render();
+    }
+  }
+  else if(action === 'confirm-received'){
+    const val = document.getElementById('receivedInput-'+id).value;
+    if(val){
+      const changed = c.startDate !== val;
+      c.startDate = val;
+      if(changed) c.log.push({date: todayISO(), text: `تعديل تاريخ استلام الاستشارة إلى: ${fmtDate(val)}`});
+      await saveCase(c);
+      render();
+    }
+  }
+  else if(action === 'confirm-finish'){
+    const val = document.getElementById('finishInput-'+id).value;
+    if(val){
+      const changed = c.finishDate !== val;
+      c.finishDate = val;
+      if(changed) c.log.push({date: todayISO(), text: `تحديد/تعديل تاريخ الانتهاء من الاستشارة: ${fmtDate(val)}`});
+      await saveCase(c);
+      render();
+    }
+  }
+  else if(action === 'clear-finish'){
+    c.finishDate = null;
+    c.log.push({date: todayISO(), text: 'مسح تاريخ الانتهاء من الاستشارة'});
+    await saveCase(c);
+    render();
+  }
+  else if(action === 'close'){
+    c.status = 'closed';
+    c.log.push({date: todayISO(), text: 'إغلاق الاستشارة'});
+    await saveCase(c);
+    render();
+  }
+  else if(action === 'reopen'){
+    c.status = 'active';
+    c.log.push({date: todayISO(), text: 'إعادة فتح الاستشارة'});
+    await saveCase(c);
+    render();
+  }
+  else if(action === 'delete'){
+    cases = cases.filter(x => x.id !== id);
+    await deleteCaseStorage(id);
+    render();
+  }
+}
+
+// ---------- add form ----------
+const addToggle = document.getElementById('addToggle');
+const addForm = document.getElementById('addForm');
+const addPlus = document.getElementById('addPlus');
+addToggle.addEventListener('click', () => {
+  addForm.classList.toggle('open');
+  addPlus.textContent = addForm.classList.contains('open') ? '−' : '+';
+});
+
+document.getElementById('fDate').value = todayISO();
+
+document.getElementById('saveCase').addEventListener('click', async () => {
+  const title = document.getElementById('fTitle').value.trim();
+  const date = document.getElementById('fDate').value || todayISO();
+
+  const c = {
+    id: 'c' + Date.now() + Math.random().toString(36).slice(2,7),
+    num: cases.length + 1,
+    title,
+    startDate: date,
+    status: 'active',
+    pauses: [],
+    extensions: [],
+    finishDate: null,
+    submitter: '',
+    supervision: 'عبدالرحمن البشر',
+    beneficiaryDept: '',
+    receivedVia: '',
+    classification: '',
+    notes: '',
+    log: [{date: todayISO(), text: 'إنشاء الاستشارة'}]
+  };
+  cases.push(c);
+  await saveCase(c);
+
+  document.getElementById('fTitle').value = '';
+  document.getElementById('fDate').value = todayISO();
+  addForm.classList.remove('open');
+  addPlus.textContent = '+';
+  render();
+});
+
+// ---------- تصدير التقرير الشهري (Excel) ----------
+document.getElementById('reportMonth').value = todayISO().slice(0,7);
+
+document.getElementById('exportBtn').addEventListener('click', () => {
+  const ym = document.getElementById('reportMonth').value;
+  if(!ym){ alert('اختر الشهر أولاً'); return; }
+
+  const rows = cases.filter(c => c.startDate && c.startDate.slice(0,7) === ym);
+  if(rows.length === 0){
+    alert('لا توجد استشارات تم استلامها ضمن هذا الشهر.');
+    return;
+  }
+
+  const headers = [
+    'م',
+    'تاريخ استلام الاستشارة',
+    'موضوع الاستشارة',
+    'مقدم الاستشارة',
+    'الإشراف',
+    'تاريخ الانتهاء من الاستشارة',
+    'الإدارة المستفيدة',
+    'ملاحظات إضافية',
+    'ورود الاستشارة عبر',
+    'تصنيف المعاملة',
+    'عدد الأيام'
+  ];
+  const data = [headers];
+
+  rows
+    .slice()
+    .sort((a,b) => a.startDate.localeCompare(b.startDate))
+    .forEach((c, i) => {
+      const received = fmtDate(c.startDate);
+      const finish = c.finishDate ? fmtDate(c.finishDate) : '';
+      const endForCount = c.finishDate || todayISO();
+      const days = countActiveBusinessDays(c, c.startDate, endForCount);
+      data.push([
+        i + 1,
+        received,
+        c.title || '',
+        c.submitter || '',
+        c.supervision || '',
+        finish,
+        c.beneficiaryDept || '',
+        c.notes || '',
+        c.receivedVia || '',
+        c.classification || '',
+        days
+      ]);
+    });
+
+  const ws = XLSX.utils.aoa_to_sheet(data);
+  ws['!cols'] = [
+    {wch:5}, {wch:18}, {wch:28}, {wch:18}, {wch:16}, {wch:18},
+    {wch:20}, {wch:28}, {wch:18}, {wch:16}, {wch:10}
+  ];
+  const wb = XLSX.utils.book_new();
+  wb.Workbook = { Views: [{ RTL: true }] };
+  XLSX.utils.book_append_sheet(wb, ws, 'تقرير ' + ym);
+  XLSX.writeFile(wb, 'تقرير-الاستشارات-' + ym + '.xlsx');
+});
+
+document.getElementById('resetAll').addEventListener('click', async () => {
+  if(!confirm('سيتم حذف جميع الاستشارات المحفوظة. هل أنت متأكد؟')) return;
+  for(const c of cases.slice()){
+    await deleteCaseStorage(c.id);
+  }
+  cases = [];
+  render();
+});
+
+loadCases();
+</script>
+</body>
+</html>
